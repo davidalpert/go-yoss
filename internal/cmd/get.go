@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"github.com/davidalpert/go-printers/v1"
 	"github.com/davidalpert/go-yoss/internal/cfgset"
+	"github.com/davidalpert/go-yoss/internal/cmd/helpers"
 	"github.com/davidalpert/go-yoss/internal/provider"
-	"github.com/davidalpert/go-yoss/internal/provider/paramstore"
 	"github.com/spf13/cobra"
-	"sort"
-	"strings"
 )
 
 type GetOptions struct {
@@ -22,10 +20,8 @@ type GetOptions struct {
 
 func NewGetOptions(ioStreams printers.IOStreams) *GetOptions {
 	return &GetOptions{
-		PrinterOptions: printers.NewPrinterOptions().WithStreams(ioStreams).WithDefaultOutput("text"),
-		SupportedProviders: map[string]provider.NewProviderFn{
-			paramstore.ProviderKey: paramstore.NewProvider,
-		},
+		PrinterOptions:     printers.NewPrinterOptions().WithStreams(ioStreams).WithDefaultOutput("text"),
+		SupportedProviders: helpers.SupportedProviders,
 	}
 }
 
@@ -56,18 +52,6 @@ func NewCmdGet(ioStreams printers.IOStreams) *cobra.Command {
 	return cmd
 }
 
-func (o *GetOptions) supportedProviderKeys() []string {
-	result := make([]string, len(o.SupportedProviders))
-	i := 0
-	for key, _ := range o.SupportedProviders {
-		result[i] = key
-		i++
-	}
-	sort.Strings(result)
-	return result
-
-}
-
 // Complete the options
 func (o *GetOptions) Complete(cmd *cobra.Command, args []string) error {
 	o.ProviderName = args[0]
@@ -83,8 +67,8 @@ func (o *GetOptions) Complete(cmd *cobra.Command, args []string) error {
 
 // Validate the options
 func (o *GetOptions) Validate() error {
-	if _, ok := o.SupportedProviders[o.ProviderName]; !ok {
-		return fmt.Errorf("unrecognized provider %#v: supported provider are: %#v", o.ProviderName, strings.Join(o.supportedProviderKeys(), ", "))
+	if err := helpers.ValidateProviderKey(o.ProviderName); err != nil {
+		return err
 	}
 
 	return o.PrinterOptions.Validate()
