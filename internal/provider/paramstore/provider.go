@@ -6,7 +6,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
 	"github.com/aws/aws-sdk-go/service/ssm/ssmiface"
-	"log"
+	"github.com/davidalpert/go-yoss/internal/provider"
+	"strings"
 )
 
 func Sessions(region string, debug bool) (*session.Session, error) {
@@ -18,21 +19,33 @@ func Sessions(region string, debug bool) (*session.Session, error) {
 	return svc, err
 }
 
-func NewSSMClient(region string, debug bool) *Client {
-	// Create AWS Session
-	sess, err := Sessions(region, debug)
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
-	return &Client{ssm.New(sess)}
-}
-
 // Client is a Client API client.
 type Client struct {
 	client ssmiface.SSMAPI
+	*provider.Options
 }
 
+const ProviderKey = "aws"
+
+func NewProvider(o *provider.Options) (provider.Interface, error) {
+	awsRegion := o.Region
+	if strings.EqualFold(awsRegion, "default") {
+		awsRegion = "us-east-1"
+	}
+
+	// Create AWS Session
+	sess, err := Sessions(awsRegion, o.Debug)
+	if err != nil {
+		return nil, fmt.Errorf("creating AWS session: %v", err)
+	}
+
+	return &Client{
+		ssm.New(sess),
+		o,
+	}, nil
+}
+
+// GetValue implements provider.Interface
 func (s *Client) GetValue(name string) (string, error) {
 	ssmsvc := s.client
 	parameter, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
@@ -46,6 +59,7 @@ func (s *Client) GetValue(name string) (string, error) {
 	return value, nil
 }
 
+// GetValueTree implements provider.Interface
 func (s *Client) GetValueTree(prefix string) (map[string]string, error) {
 	input := ssm.GetParametersByPathInput{}
 	input.SetPath(prefix)
@@ -78,6 +92,7 @@ func (s *Client) GetValueTree(prefix string) (map[string]string, error) {
 	return result, nil
 }
 
+// SetValue implements provider.Interface
 func (s *Client) SetValue(key, value string) error {
 	input := ssm.PutParameterInput{
 		AllowedPattern: nil,

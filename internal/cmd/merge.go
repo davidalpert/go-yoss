@@ -14,6 +14,7 @@ func NewCmdMerge(ioStreams printers.IOStreams) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdMergeFiles(ioStreams))
+	cmd.AddCommand(NewCmdMergeFolder(ioStreams))
 
 	return cmd
 }

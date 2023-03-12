@@ -1,11 +1,7 @@
 package provider
 
 import (
-	"fmt"
-	"github.com/davidalpert/go-yoss/internal/provider/paramstore"
 	"github.com/spf13/pflag"
-	"sort"
-	"strings"
 )
 
 type Interface interface {
@@ -19,6 +15,7 @@ type Options struct {
 	Provider     Interface
 	Region       string // a.k.a. Datacenter
 	Namespace    string // a.k.a. Environment
+	OutDir       string
 	Debug        bool
 }
 
@@ -26,40 +23,7 @@ type Options struct {
 func (o *Options) AddProviderOptions(c *pflag.FlagSet) {
 	c.StringVar(&o.Region, "region", "default", "region")
 	c.StringVarP(&o.Namespace, "namespace", "n", "default", "namespace")
+	c.StringVar(&o.OutDir, "out-dir", "out", "output dir for result or any diagnostics")
 }
 
-var SupportedProviders []string
-
-func init() {
-	SupportedProviders = []string{"aws"}
-}
-
-func New(o Options) (Interface, error) {
-	// provider-by-key pattern
-	//supportedProviders := map[string]func() app.Interface{
-	//	"aws": func() app.Interface { return paramstore.NewSSMClient(o.Debug) },
-	//}
-	//
-	//supportedProviderKeys := make([]string, 0)
-	//for k, _ := range supportedProviders {
-	//	supportedProviderKeys = append(supportedProviderKeys, k)
-	//}
-	//sort.Strings(supportedProviderKeys)
-	//
-	//if clientFunc, ok := supportedProviders[o.ProviderName]; ok {
-	//	return clientFunc(), nil
-	//} else {
-	//	return nil, fmt.Errorf("unrecognized provider %#v: supported provider are: %#v", o.ProviderName, strings.Join(supportedProviderKeys, ", "))
-	//}
-
-	// provider-as-list pattern
-	if strings.EqualFold(o.ProviderName, "aws") {
-	    if strings.EqualFold(o.Region, "default") {
-	       o.Region = "us-east-1"
-	    }
-		return paramstore.NewSSMClient(o.Region, o.Debug), nil
-	} else {
-		sort.Strings(SupportedProviders)
-		return nil, fmt.Errorf("unrecognized provider %#v: supported provider are: %#v", o.ProviderName, strings.Join(SupportedProviders, ", "))
-	}
-}
+type NewProviderFn = func(o *Options) (Interface, error)

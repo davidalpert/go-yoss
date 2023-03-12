@@ -2,32 +2,31 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/davidalpert/go-printers/v1"
 	"github.com/davidalpert/go-yoss/internal/app"
 	"github.com/davidalpert/go-yoss/internal/cfgset"
-	"github.com/davidalpert/go-printers/v1"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path"
+	"strings"
 )
 
-type SyncFolderOptions struct {
+type MergeFolderOptions struct {
 	*printers.PrinterOptions
 	cfgset.MergeOptions
-	OutFolder string
-	OutFormat string
+	OutDir string
 }
 
-func NewSyncFolderOptions(ioStreams printers.IOStreams) *SyncFolderOptions {
-	return &SyncFolderOptions{
-		PrinterOptions: printers.NewPrinterOptions().WithStreams(ioStreams).WithDefaultOutput("text"),
-		OutFormat:      "yaml",
+func NewMergeFolderOptions(ioStreams printers.IOStreams) *MergeFolderOptions {
+	return &MergeFolderOptions{
+		PrinterOptions: printers.NewPrinterOptions().WithStreams(ioStreams).WithDefaultOutput("yaml"),
 	}
 }
 
-func NewCmdSyncFolder(ioStreams printers.IOStreams) *cobra.Command {
-	o := NewSyncFolderOptions(ioStreams)
+func NewCmdMergeFolder(ioStreams printers.IOStreams) *cobra.Command {
+	o := NewMergeFolderOptions(ioStreams)
 	var cmd = &cobra.Command{
 		Use:     "folder <source_folder>",
 		Short:   "merge two config files together",
@@ -47,42 +46,50 @@ func NewCmdSyncFolder(ioStreams printers.IOStreams) *cobra.Command {
 	o.PrinterOptions.AddPrinterFlags(cmd.Flags())
 
 	cmd.Flags().BoolVarP(&o.Debug, "debug", "d", false, "enable debug output")
-	cmd.Flags().StringVar(&o.OutFolder, "out-folder", "out", "folder to place output")
-	//cmd.Flags().StringVar(&o.OutFormat, "out-format", "out", "format for output")
+	cmd.Flags().StringVar(&o.OutDir, "out-dir", "out", "folder to place output")
 
 	return cmd
 }
 
 // Complete the options
-func (o *SyncFolderOptions) Complete(cmd *cobra.Command, args []string) error {
+func (o *MergeFolderOptions) Complete(cmd *cobra.Command, args []string) error {
 	o.SourceFolder = args[0]
 	return nil
 }
 
 // Validate the options
-func (o *SyncFolderOptions) Validate() error {
+func (o *MergeFolderOptions) Validate() error {
+	if strings.EqualFold(o.SourceFolder, o.OutDir) {
+		return fmt.Errorf("cannot merge into the source folder '%s'; please specify a different --out-dir", o.SourceFolder)
+	}
+
 	return o.PrinterOptions.Validate()
 }
 
 // Run the command
-func (o *SyncFolderOptions) Run() error {
+func (o *MergeFolderOptions) Run() error {
 	result, err := cfgset.Merge(o.MergeOptions)
 	if err != nil {
 		return err
 	}
 
-	if err = app.Fs.MkdirAll(o.OutFolder, os.ModePerm); err != nil {
-		return fmt.Errorf("making %#v: %#v", o.OutFolder, err)
+	if err = app.Fs.MkdirAll(o.OutDir, os.ModePerm); err != nil {
+		return fmt.Errorf("making %#v: %#v", o.OutDir, err)
+	}
+
+	outputExt := o.FormatCategory()
+	if outputExt == "text" {
+		outputExt = "txt"
 	}
 
 	for _, appResult := range result {
-		appOutDir := path.Join(o.OutFolder, appResult.AppDir)
+		appOutDir := path.Join(o.OutDir, appResult.AppDir)
 		if err = app.Fs.MkdirAll(appOutDir, os.ModePerm); err != nil {
 			return fmt.Errorf("making %#v: %#v", appOutDir, err)
 		}
 
 		for slug, mergeResult := range appResult.MergeBySlug {
-			outFile := path.Join(appOutDir, fmt.Sprintf("%s.%s", slug, o.OutFormat))
+			outFile := path.Join(appOutDir, fmt.Sprintf("%s.%s", slug, outputExt))
 			b, err := yaml.Marshal(mergeResult)
 			if err != nil {
 				return fmt.Errorf("marshalling %#v to %#v: %#v", mergeResult, outFile, err)
@@ -96,6 +103,5 @@ func (o *SyncFolderOptions) Run() error {
 		}
 	}
 
-	//return o.WithDefaultOutput("json").WriteOutput(result)
 	return nil
 }

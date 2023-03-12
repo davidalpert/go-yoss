@@ -9,7 +9,7 @@ Feature: sync folder
 
   # @announce-stdout
   Scenario: yaml merge to yaml output sorts keys
-    When I successfully run `yoss sync folder config --out-folder out`
+    When I successfully run `yoss merge folder config --out-dir out`
     Then the file "out/app1/prd.yaml" should contain:
       """
       env: prd
