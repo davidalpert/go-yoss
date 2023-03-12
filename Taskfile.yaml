@@ -21,8 +21,10 @@ tasks:
     deps:
       - gen
       - vale
-      - test
-      - build
+    cmds:
+      - task: test
+      - task: build
+      - task: features
 
   doctor:
     desc: run doctor.sh to sort out development dependencies
@@ -45,11 +47,11 @@ tasks:
       # - grep "\"{{ .VERSION }}\"" internal/version/detail.go
       - '[[ -n $SKIP_GEN ]]'
 
-#  bundle:
-#    desc: install ruby gems
-#    run: once
-#    cmds:
-#      - bundle --quiet
+  bundle:
+    desc: install ruby gems
+    run: once
+    cmds:
+      - bundle --quiet
   
   vale:
     desc: run linting rules against markdown files
@@ -75,25 +77,25 @@ tasks:
       - goconvey
     silent: true
 
-#  features:
-#    desc: run acceptance tests
-#    deps:
-#      - bundle
-#      - gen
-#      - test
-#      - build
-#    cmds:
-#      - bundle exec cucumber --publish-quiet --tags 'not @wip' --tags 'not @ignore'
-#
-#  features-wip:
-#    desc: run wip acceptance tests
-#    deps:
-#      - bundle
-#      - gen
-#      - test
-#      - build
-#    cmds:
-#      - bundle exec cucumber --publish-quiet --tags '@wip' --tags 'not @ignore'
+  features:
+    desc: run acceptance tests
+    deps:
+      - bundle
+      - gen
+      - test
+      - build
+    cmds:
+      - bundle exec cucumber --publish-quiet --tags 'not @wip' --tags 'not @ignore'
+
+  features-wip:
+    desc: run wip acceptance tests
+    deps:
+      - bundle
+      - gen
+      - test
+      - build
+    cmds:
+      - bundle exec cucumber --publish-quiet --tags '@wip' --tags 'not @ignore'
 
   build:
     desc: build

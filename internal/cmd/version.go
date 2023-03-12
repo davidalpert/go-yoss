@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/davidalpert/go-yoss/internal/version"
 	"github.com/davidalpert/go-printers/v1"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 type VersionOptions struct {
@@ -11,18 +13,18 @@ type VersionOptions struct {
 	VersionDetails *version.DetailStruct
 }
 
-func NewVersionOptions(s printers.IOStreams) *VersionOptions {
+func NewVersionOptions(ioStreams printers.IOStreams) *VersionOptions {
 	return &VersionOptions{
-		PrinterOptions: printers.NewPrinterOptions().WithStreams(s).WithDefaultOutput("text"),
+		PrinterOptions: printers.NewPrinterOptions().WithStreams(ioStreams).WithDefaultOutput("text"),
 		VersionDetails: &version.Detail,
 	}
 }
 
-func NewCmdVersion(s printers.IOStreams) *cobra.Command {
-	o := NewVersionOptions(s)
+func NewCmdVersion(ioStreams printers.IOStreams) *cobra.Command {
+	o := NewVersionOptions(ioStreams)
 	var cmd = &cobra.Command{
 		Use:   "version",
-		Short: "show version information",
+		Short: "Show version information",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := o.Complete(cmd, args); err != nil {
@@ -35,7 +37,7 @@ func NewCmdVersion(s printers.IOStreams) *cobra.Command {
 		},
 	}
 
-	o.AddPrinterFlags(cmd.Flags())
+	o.PrinterOptions.AddPrinterFlags(cmd.Flags())
 
 	return cmd
 }
@@ -52,9 +54,19 @@ func (o *VersionOptions) Validate() error {
 
 // Run the command
 func (o *VersionOptions) Run() error {
+	if strings.EqualFold(*o.OutputFormat, "text") {
+		s := fmt.Sprintf("%s %s", o.VersionDetails.AppName, o.VersionDetails.Version)
+		_, err := fmt.Fprintln(o.Out, s)
+		return err
+	}
 	if o.FormatCategory() == "table" || o.FormatCategory() == "csv" {
-		o.WithDefaultOutput("json")
+		o.OutputFormat = printers.StringPointer("json")
 	}
 
-	return o.WriteOutput(o.VersionDetails)
+	s, _, err := o.PrinterOptions.FormatOutput(o.VersionDetails)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintln(o.Out, s)
+	return err
 }

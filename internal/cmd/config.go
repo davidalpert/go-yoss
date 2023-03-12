@@ -7,8 +7,8 @@ import (
 
 func NewCmdConfig(s printers.IOStreams) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:     "config",
-		Aliases: []string{"cfg", "c"},
+		Use:     "configure",
+		Aliases: []string{"config", "cfg", "c"},
 		Short:   "configuration subcommands",
 		//Args:    cobra.NoArgs,
 	}

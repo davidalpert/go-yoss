@@ -2,59 +2,90 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/davidalpert/go-yoss/internal/version"
 	"github.com/davidalpert/go-printers/v1"
-	"github.com/davidalpert/go-yoss/internal/cfg"
-	"github.com/davidalpert/go-yoss/internal/diagnostics"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
+
+// cfgFile is an optional path to a configuration file used to initialize viper
+var cfgFile string
 
 // Execute builds the default root command and invokes it with os.Args
 func Execute() {
-	s := printers.DefaultOSStreams()
-	// configure the logger here in the outer scope so that we can defer
-	// any cleanup such as writing/flushing the stream
-	logCleanupFn := diagnostics.ConfigureLogger(s)
-	defer logCleanupFn()
-
-	rootCmd := NewRootCmd(s)
+	rootCmd := NewRootCmd(printers.DefaultOSStreams())
 
 	rootCmd.SetArgs(os.Args[1:]) // without program
 
-	if err := rootCmd.Execute(); err != nil {
-		_, _ = fmt.Fprintln(s.Out, err)
+	err := rootCmd.Execute()
+
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }
 
+// RootCmdOptions is a struct to support version command
+type RootCmdOptions struct {
+	printers.IOStreams
+	Verbose bool
+}
+
+// NewRootCmdOptions returns initialized RootCmdOptions
+func NewRootCmdOptions(ioStreams printers.IOStreams) *RootCmdOptions {
+	return &RootCmdOptions{
+		IOStreams: ioStreams,
+	}
+}
+
 // NewRootCmd creates the 'root' command and configures it's nested children
-func NewRootCmd(s printers.IOStreams) *cobra.Command {
+func NewRootCmd(ioStreams printers.IOStreams) *cobra.Command {
+	//o := NewRootCmdOptions(ioStreams)
 	rootCmd := &cobra.Command{
-		Use:           "yoss",
-		Short:         "a CLI tool for yossing content-as-code into a knowledge base",
-		SilenceUsage:  false,
+		Use:           version.Detail.AppName,
+		Short:         "A tool for managing, merging, and shipping config files.",
+		Long:          ``,
+		SilenceUsage:  true,
 		SilenceErrors: true,
-		CompletionOptions: cobra.CompletionOptions{
-			DisableDefaultCmd:   true,
-			DisableNoDescFlag:   false,
-			DisableDescriptions: false,
-			HiddenDefaultCmd:    false,
-		},
 		// Uncomment the following line if your bare application
 		// has an action associated with it:
-		//	Run: func(cmd *cobra.Command, args []string) { },
-		//  RunE: func(cmd *cobra.Command, args []string) error { },
+		//	Run: func(cmd *cobra.Command, args []string) { },}
 		Aliases: []string{},
+		//RunE: func(cmd *cobra.Command, args []string) error {
+		//	if err := o.Complete(cmd, args); err != nil {
+		//		return err
+		//	}
+		//	if err := o.Validate(); err != nil {
+		//		return err
+		//	}
+		//	return o.Run()
+		//},
 	}
 
 	// Register subcommands
-	rootCmd.AddCommand(NewCmdConfig(s))
-	rootCmd.AddCommand(NewCmdVersion(s))
+	rootCmd.AddCommand(NewCmdConfig(ioStreams))
+	rootCmd.AddCommand(NewCmdVersion(ioStreams))
 
-	rootCmd.PersistentFlags().StringVarP(&cfg.File, "config", "c", cfg.File, "config file to use")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", fmt.Sprintf("config file (default is $HOME/.%s/config.yaml)", version.Detail.AppName))
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "enable verbose output")
 
 	return rootCmd
 }
 
-func init() {
+// Complete the options
+func (o *RootCmdOptions) Complete(cmd *cobra.Command, args []string) error {
+	verbose, _ := cmd.PersistentFlags().GetBool("verbose")
+	o.Verbose = verbose
+	return nil
+}
+
+// Validate the options
+func (o *RootCmdOptions) Validate() error {
+	return nil
+}
+
+// Run the command
+func (o *RootCmdOptions) Run() error {
+	return nil
 }

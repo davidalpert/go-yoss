@@ -1,20 +1,20 @@
 package cmd
 
 import (
-	"github.com/davidalpert/go-yoss/internal/cfg"
+	"github.com/davidalpert/go-yoss/internal/app"
 	"github.com/davidalpert/go-printers/v1"
 	"github.com/spf13/cobra"
 )
 
 type ConfigGetOptions struct {
 	*printers.PrinterOptions
-	Values *cfg.Config
+	Values *app.Config
 }
 
 func NewConfigGetOptions(s printers.IOStreams) *ConfigGetOptions {
 	return &ConfigGetOptions{
 		PrinterOptions: printers.NewPrinterOptions().WithStreams(s).WithDefaultOutput("yaml"),
-		Values:         &cfg.Config{},
+		Values:         &app.Config{},
 	}
 }
 
@@ -42,7 +42,7 @@ func NewCmdConfigGet(s printers.IOStreams) *cobra.Command {
 
 // Complete the options
 func (o *ConfigGetOptions) Complete(cmd *cobra.Command, args []string) error {
-	if err := cfg.ReadMergedInto(o.Values); err != nil {
+	if err := app.ReadMergedInto(o.Values); err != nil {
 		return err
 	}
 

@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/davidalpert/go-printers/v1"
-	"github.com/davidalpert/go-yoss/internal/cfg"
+	"github.com/davidalpert/go-yoss/internal/app"
 	"github.com/spf13/cobra"
 	"strings"
 )
 
 type ConfigSetupOptions struct {
 	*printers.PrinterOptions
-	Config *cfg.Config
+	Config *app.Config
 }
 
 func NewConfigSetupOptions(s printers.IOStreams) *ConfigSetupOptions {
 	return &ConfigSetupOptions{
 		PrinterOptions: printers.NewPrinterOptions().WithStreams(s).WithDefaultOutput("text"),
-		Config:         &cfg.Config{},
+		Config:         &app.Config{},
 	}
 }
 
@@ -45,7 +45,7 @@ func NewCmdConfigSetup(s printers.IOStreams) *cobra.Command {
 
 // Complete the options
 func (o *ConfigSetupOptions) Complete(cmd *cobra.Command, args []string) error {
-	if err := cfg.ReadMergedInto(o.Config); err != nil {
+	if err := app.ReadMergedInto(o.Config); err != nil {
 		return err
 	}
 
@@ -66,10 +66,10 @@ func (o *ConfigSetupOptions) Run() error {
 		return err
 	}
 
-	if err := o.Config.WriteToFile(cfg.File); err != nil {
+	if err := o.Config.WriteToFile(app.File); err != nil {
 		return err
 	}
-	_, err := fmt.Fprintf(o.Out, "configuration written to %s\n", cfg.File)
+	_, err := fmt.Fprintf(o.Out, "configuration written to %s\n", app.File)
 
 	return err
 }
