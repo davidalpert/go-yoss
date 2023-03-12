@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.182
 	github.com/davidalpert/go-deep-merge v1.0.0
 	github.com/davidalpert/go-printers v0.3.0
-	github.com/ilyakaznacheev/cleanenv v1.3.0
+	github.com/ilyakaznacheev/cleanenv v1.4.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/afero v1.9.5
