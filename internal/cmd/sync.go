@@ -14,6 +14,7 @@ func NewCmdSync(ioStreams printers.IOStreams) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdSyncFolder(ioStreams))
+	cmd.AddCommand(NewCmdSyncProvider(ioStreams))
 
 	return cmd
 }
