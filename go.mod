@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
 	github.com/apex/log v1.9.0
-	github.com/aws/aws-sdk-go v1.44.182
+	github.com/aws/aws-sdk-go v1.44.219
 	github.com/davidalpert/go-deep-merge v1.0.0
 	github.com/davidalpert/go-printers v0.3.0
 	github.com/ilyakaznacheev/cleanenv v1.4.2
